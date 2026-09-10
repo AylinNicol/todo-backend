@@ -9,8 +9,8 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 export class CategoryService {
   constructor(private readonly categoryRepository: CategoryRepository) {}
 
-  async findAll() {
-    return this.categoryRepository.findAll();
+  async findAll(userId: string) {
+    return this.categoryRepository.findAll(userId);
   }
 
   async getOne(id: string) {

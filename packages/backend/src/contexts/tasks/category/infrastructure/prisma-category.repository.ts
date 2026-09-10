@@ -15,8 +15,10 @@ export class PrismaCategoryRepository implements CategoryRepository {
     return new Category(row.id, row.name, row.color, row.userId);
   }
 
-  async findAll() {
-    const rows = await this.prisma.category.findMany();
+  async findAll(userId: string) {
+    const rows = await this.prisma.category.findMany({
+      where: { userId },
+    });
     return rows.map((r) => this.toDomain(r));
   }
 

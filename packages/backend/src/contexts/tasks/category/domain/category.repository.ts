@@ -7,12 +7,12 @@ export interface CreateCategoryData {
 }
 
 export interface UpdateCategoryData {
-  name: string;
+  name?: string;
   color?: string | null;
 }
 
 export abstract class CategoryRepository {
-  abstract findAll(): Promise<Category[]>;
+  abstract findAll(userId: string): Promise<Category[]>;
   abstract getOne(id: string): Promise<Category | null>;
   abstract create(data: CreateCategoryData): Promise<Category>;
   abstract update(
