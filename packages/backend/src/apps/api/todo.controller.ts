@@ -46,7 +46,9 @@ export class TodoController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Crear una nueva tarea para el usuario autenticado' })
+  @ApiOperation({
+    summary: 'Crear una nueva tarea para el usuario autenticado',
+  })
   @ApiResponse({ status: 201, description: 'Tarea creada' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(
