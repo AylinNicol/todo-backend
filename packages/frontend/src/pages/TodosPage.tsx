@@ -9,11 +9,19 @@ interface Todo {
   description: string | null;
   completed: boolean;
   dueDate: string | null;
+  categoryId: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color: string | null;
 }
 
 export default function TodosPage() {
   const { token } = useAuth();
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -22,7 +30,9 @@ export default function TodosPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [filterCategoryId, setFilterCategoryId] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -30,15 +40,33 @@ export default function TodosPage() {
       const data = await api<Todo[]>("/api/todo", { token });
       setTodos(data);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Error al cargar", "error");
+      showToast(
+        err instanceof Error ? err.message : "Error al cargar",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const data = await api<Category[]>("/api/categories", { token });
+      setCategories(data);
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Error al cargar categorías",
+        "error",
+      );
+    }
+  };
+
   useEffect(() => {
     load();
+    loadCategories();
   }, []);
+
+  const [categoryId, setCategoryId] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +79,14 @@ export default function TodosPage() {
           title: title.trim(),
           description: description.trim() || undefined,
           dueDate: dueDate || undefined,
+          categoryId: categoryId || null,
         },
         token,
       });
       setTitle("");
       setDescription("");
       setDueDate("");
+      setCategoryId("");
       showToast("Tarea creada", "success");
       load();
     } catch (err) {
@@ -75,7 +105,10 @@ export default function TodosPage() {
       });
       load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Error al actualizar", "error");
+      showToast(
+        err instanceof Error ? err.message : "Error al actualizar",
+        "error",
+      );
     }
   };
 
@@ -85,7 +118,10 @@ export default function TodosPage() {
       showToast("Tarea eliminada", "success");
       load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Error al eliminar", "error");
+      showToast(
+        err instanceof Error ? err.message : "Error al eliminar",
+        "error",
+      );
     }
   };
 
@@ -94,6 +130,7 @@ export default function TodosPage() {
     setEditTitle(todo.title);
     setEditDescription(todo.description ?? "");
     setEditDueDate(todo.dueDate ? todo.dueDate.split("T")[0] : "");
+    setEditCategoryId(todo.categoryId || "");
   };
 
   const handleSave = async () => {
@@ -105,13 +142,17 @@ export default function TodosPage() {
           title: editTitle.trim(),
           description: editDescription.trim() || undefined,
           dueDate: editDueDate || null,
+          categoryId: editCategoryId || null,
         },
         token,
       });
       setEditingId(null);
       load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Error al guardar", "error");
+      showToast(
+        err instanceof Error ? err.message : "Error al guardar",
+        "error",
+      );
     }
   };
 
@@ -122,6 +163,10 @@ export default function TodosPage() {
 
   const completed = todos.filter((t) => t.completed).length;
   const total = todos.length;
+
+  const filteredTodos = filterCategoryId
+    ? todos.filter((todo) => todo.categoryId === filterCategoryId)
+    : todos;
 
   return (
     <div>
@@ -162,6 +207,19 @@ export default function TodosPage() {
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2"
+        >
+          <option value="">Sin categoría</option>
+
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={submitting || !title.trim()}
@@ -171,6 +229,22 @@ export default function TodosPage() {
         </button>
       </form>
 
+      <div className="mb-4">
+        <select
+          value={filterCategoryId}
+          onChange={(e) => setFilterCategoryId(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2"
+        >
+          <option value="">Todas las categorías</option>
+
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {loading ? (
         <p className="text-sm text-gray-500">Cargando...</p>
       ) : todos.length === 0 ? (
@@ -179,7 +253,7 @@ export default function TodosPage() {
         </p>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
-          {todos.map((todo) => (
+          {filteredTodos.map((todo) => (
             <div
               key={todo.id}
               className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50"
@@ -223,6 +297,19 @@ export default function TodosPage() {
                     }}
                     className="w-full px-2 py-1 border border-blue-200 rounded text-xs text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <select
+                    value={editCategoryId}
+                    onChange={(e) => setEditCategoryId(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2"
+                  >
+                    <option value="">Sin categoría</option>
+
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                   <div className="flex gap-2">
                     <button
                       onClick={handleSave}
@@ -253,6 +340,26 @@ export default function TodosPage() {
                     >
                       {todo.title}
                     </span>
+                    {todo.categoryId &&
+                      (() => {
+                        const category = categories.find(
+                          (category) => category.id === todo.categoryId,
+                        );
+
+                        if (!category) return null;
+
+                        return (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                            style={{
+                              backgroundColor: category.color ?? "#e5e7eb",
+                              color: "#ffffff",
+                            }}
+                          >
+                            {category.name}
+                          </span>
+                        );
+                      })()}
                     <svg
                       className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
                       fill="none"
@@ -260,7 +367,11 @@ export default function TodosPage() {
                       strokeWidth={2}
                       stroke="currentColor"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                      />
                     </svg>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
