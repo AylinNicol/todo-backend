@@ -32,4 +32,12 @@ export class UpdateTodoDto {
   })
   @IsOptional()
   dueDate?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'ID de la categoría asociada a la tarea',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsString()
+  @IsOptional()
+  categoryId?: string | null;
 }

@@ -19,6 +19,7 @@ export class PrismaTodoRepository implements TodoRepository {
       row.completed,
       row.userId,
       row.dueDate,
+      row.categoryId,
     );
   }
 
